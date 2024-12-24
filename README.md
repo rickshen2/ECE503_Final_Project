@@ -108,7 +108,7 @@ For Python:\
    ```
    async function run_simulations()
    ```
-    change the parameters. 
+    change the parameters if necessary. 
 
 2. Once satisfied, run the program by 
    ```
