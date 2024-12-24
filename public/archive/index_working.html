@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Data Fetcher</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Stock Data Fetcher</h1>
+  <input type="text" id="symbolInput" placeholder="Enter stock symbol (e.g., AAPL)">
+  <button onclick="fetchStockData()">Fetch Stock Data</button>
+
+  <canvas id="stockChart" width="400" height="200"></canvas>
+
+  <script>
+    // Set hypothetical "today" date
+    const today = '2024-11-08';
+
+    // Fetch stock data and plot
+    async function fetchStockData() {
+      const symbol = document.getElementById('symbolInput').value;
+      if (!symbol) {
+        alert('Please enter a symbol');
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/stock/${symbol}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        console.log('Stock Data Response:', data);
+
+        if (data.message) {
+          alert(data.message);
+        } else if (data.error) {
+          alert(data.error);
+        }
+
+        // Now, plot the stock data
+        plotStockData(symbol);
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+        alert('There was an error fetching the stock data');
+      }
+    }
+
+    // Plotting the stock data
+    function plotStockData(symbol) {
+      fetch(`http://localhost:3000/api/stock/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+          const dates = data.dates;
+          const closePrices = data.closePrices;
+
+          const ctx = document.getElementById('stockChart').getContext('2d');
+          const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: dates,
+              datasets: [{
+                label: `Close Price for ${symbol}`,
+                data: closePrices,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: false
+                }
+              }
+            }
+          });
+        });
+    }
+  </script>
+</body>
+</html>

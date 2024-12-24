@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.7">
+    <title>SimTrade.AI - Trade</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic table and chart styling */
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+
+        th {
+          background-color: #f4f4f4;
+        }
+
+        td {
+          background-color: #fafafa;
+        }
+
+        thead {
+          background-color: #f4f4f4;
+        }
+
+        .chartBox {
+            width: 800px; 
+            height: 600px;
+        }
+
+        .trade-container {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .action-select {
+            margin-right: 10px;
+        }
+
+        .quantity-input {
+            margin-right: 10px;
+            width: 50px;
+        }
+
+        .quantity-buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 60px;
+        }
+
+        .total-value {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul style="list-style: none; display: flex; padding: 0; margin: 0;">
+            <li style="margin-right: 15px;">
+                <a href="/index.html" style="text-decoration: none;">Summary</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/cash" style="text-decoration: none;">Cash</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/manual" style="text-decoration: none;">Manual</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/strategic" style="text-decoration: none;">Strategic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/algorithmic" style="text-decoration: none;">Algorithmic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/research" style="text-decoration: none;">Research</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/trade" style="text-decoration: none; font-weight: bold; color: blue;">Trade</a>
+            </li>
+        </ul>
+    </nav>
+    <h1>Account Information</h1>
+
+    <div id="header">
+        <p>Username: <span id="username">rds260</span></p>
+        <p>UserID: <span id="userID">1</span></p>
+        <p>Current Date: <span id="currentDate">2024-09-03</span></p>
+        <p>Interest Rate: <span id="interestRate"></span></p>
+    </div>
+
+    <div class="total-value">
+        <p>Total Portfolio Value: $<span id="totalValue">Loading...</span></p>
+    </div>
+
+    <h1>Manual Trade</h1>
+
+    <div class="trade-container">
+        <label for="action">Action:</label>
+        <select id="action" class="action-select">
+            <option value="select">Select action</option>
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+        </select>
+
+        <label for="quantity">Quantity:</label>
+        <div class="quantity-buttons">
+            <button id="decreaseQuantity">-</button>
+            <input type="text" id="quantity" class="quantity-input" value="0" readonly>
+            <button id="increaseQuantity">+</button>
+        </div>
+
+        <button id="tradeButton">Trade</button>
+    </div>
+
+    <script>
+        // Fetch total portfolio value when the page loads
+        async function fetchPortfolioValue() {
+            try {
+                const response = await fetch('/api/portfolios?userID=1&portfolioType=cash');
+                const data = await response.json();
+
+                if (data && data.TotalValue) {
+                    document.getElementById('totalValue').textContent = data.TotalValue.toFixed(2);
+                } else {
+                    document.getElementById('totalValue').textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Error fetching portfolio value:', error);
+                document.getElementById('totalValue').textContent = 'Error';
+            }
+        }
+
+        // Call function to fetch portfolio value when the page loads
+        window.onload = fetchPortfolioValue;
+
+        // Handle quantity increase/decrease
+        let quantity = 0;
+
+        document.getElementById('increaseQuantity').addEventListener('click', () => {
+            quantity++;
+            document.getElementById('quantity').value = quantity;
+        });
+
+        document.getElementById('decreaseQuantity').addEventListener('click', () => {
+            if (quantity > 0) {
+                quantity--;
+                document.getElementById('quantity').value = quantity;
+            }
+        });
+
+        // Handle trade action
+        document.getElementById('tradeButton').addEventListener('click', async () => {
+            const action = document.getElementById('action').value;
+            const quantityValue = parseInt(document.getElementById('quantity').value);
+            const userID = 1; // Hardcoded userID
+            const symbol = 'AAPL'; // Hardcoded symbol, replace with dynamic value if needed
+            const currentDate = '2024-09-03'; // Hardcoded date, replace with dynamic value if needed
+            const tradeType = action === 'buy' ? quantityValue : -quantityValue;
+
+            if (action === 'select') {
+                alert('Please select an action.');
+                return;
+            }
+
+            if (quantityValue <= 0) {
+                alert('Please enter a valid quantity.');
+                return;
+            }
+
+            const tradeData = {
+                userID,
+                symbol,
+                quantity: tradeType,
+                currentDate,
+                type: 'manual'
+            };
+
+            try {
+                const response = await fetch('/api/trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tradeData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to execute trade');
+                }
+
+                const result = await response.json();
+                alert('Trade executed successfully: ' + JSON.stringify(result));
+            } catch (error) {
+                console.error('Error executing trade:', error);
+                alert('Error executing trade. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

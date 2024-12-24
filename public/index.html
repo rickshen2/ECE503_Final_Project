@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimTrade.AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6.26.0/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+        th {
+          background-color: #f4f4f4;
+        }
+        td {
+          background-color: #fafafa;
+        }
+        thead {
+          background-color: #f4f4f4;
+        }
+        nav ul {
+          list-style: none;
+          display: flex;
+          padding: 0;
+          margin: 0;
+        }
+        nav li {
+          margin-right: 15px;
+        }
+        nav a {
+          text-decoration: none;
+          font-weight: bold;
+          color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Navigation Component
+        const Navigation = () => (
+            <nav>
+                <ul>
+                    <li><a href="/index.html">Summary</a></li>
+                    <li><a href="http://127.0.0.1:3000/cash">Cash</a></li>
+                    <li><a href="http://127.0.0.1:3000/manual">Manual</a></li>
+                    <li><a href="http://127.0.0.1:3000/strategic">Strategic</a></li>
+                    <li><a href="http://127.0.0.1:3000/algorithmic">Algorithmic</a></li>
+                    <li><a href="http://127.0.0.1:3000/research">Research</a></li>
+                    <li><a href="http://127.0.0.1:3000/trade">Trade</a></li>
+                </ul>
+            </nav>
+        );
+
+        // Header Component
+        const Header = ({ username, userID }) => (
+            <div id="header">
+                <p>Username: <span>{username}</span></p>
+                <p>UserID: <span>{userID}</span></p>
+                <p>Current Date: <span>{new Date().toLocaleDateString()}</span></p>
+            </div>
+        );
+
+        // Table Row Component
+        const TableRow = ({ data, portfolioName }) => {
+            const setColor = (value) => {
+                if (value >= 0.01) return "green";
+                if (value < -0.01) return "red";
+                return "black";
+            };
+
+            return (
+                <tr>
+                    <td>{portfolioName}</td>
+                    <td>{data.dailyVal}</td>
+                    <td style={{ color: setColor(data.dailyChange) }}>{data.dailyChange}</td>
+                    <td style={{ color: setColor(data.percChange) }}>{data.percChange}</td>
+                    <td style={{ color: setColor(data.ytdChange) }}>{data.ytdChange}</td>
+                    <td style={{ color: setColor(data.ytdPercChange) }}>{data.ytdPercChange}</td>
+                </tr>
+            );
+        };
+
+        // Table Component
+        const SummaryTable = ({ summary }) => (
+            <table id="summaryTable">
+                <thead>
+                    <tr>
+                        <th>Portfolio</th>
+                        <th>Daily Value</th>
+                        <th>Daily Change</th>
+                        <th>Daily Percentage Change</th>
+                        <th>YTD Change</th>
+                        <th>YTD Percentage Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.keys(summary).map((key) => (
+                        <TableRow key={key} portfolioName={key} data={summary[key]} />
+                    ))}
+                </tbody>
+            </table>
+        );
+
+        // Main App Component
+        const App = () => {
+            const [summary, setSummary] = useState({});
+            const [username] = useState("rds260");
+            const [userID] = useState("1");
+
+            useEffect(() => {
+                // Fetch data from API
+                fetch("/api/portfolio-summary")
+                    .then((response) => response.json())
+                    .then((data) => {
+                        // Process data to match TableRow's expectations
+                        const processedData = {
+                            Manual: data.manual,
+                            Algorithmic: data.algorithmic,
+                            "Cash + Strategic": data.cashstrategic,
+                            Total: data.total,
+                        };
+                        setSummary(processedData);
+                    })
+                    .catch((error) => console.error("Error fetching portfolio summary:", error));
+            }, []);
+
+            return (
+                <div>
+                    <Navigation />
+                    <h1>Account Information</h1>
+                    <Header username={username} userID={userID} />
+                    <h2>Account Summary</h2>
+                    <SummaryTable summary={summary} />
+                </div>
+            );
+        };
+
+        // Render App
+        ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+</body>
+</html>

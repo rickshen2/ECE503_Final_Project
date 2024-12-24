@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimTrade.AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    <style>
+        /* Add basic table styling with grid lines */
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+    
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+    
+        th {
+          background-color: #f4f4f4;
+        }
+    
+        td {
+          background-color: #fafafa;
+        }
+    
+        /* Style the table header */
+        thead {
+          background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul style="list-style: none; display: flex; padding: 0; margin: 0;">
+            <li style="margin-right: 15px;">
+                <a href="/index.html" style="text-decoration: none; font-weight: bold; color: blue;">Summary</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/cash" style="text-decoration: none;">Cash</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/manual" style="text-decoration: none;">Manual</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/strategic" style="text-decoration: none;">Strategic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/algorithmic" style="text-decoration: none;">Algorithmic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/research" style="text-decoration: none;">Research</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/trade" style="text-decoration: none;">Trade</a>
+            </li>
+        </ul>
+    </nav>
+
+    <h1>Account Information</h1>
+
+    <div id="header">
+        <p>Username: <span id="username">rds260</span></p>
+        <p>UserID: <span id="userID">1</span></p>
+        <p>Current Date: <span id="currentDate"></span></p>
+        <p>Interest Rate: <span id="interestRate"></span></p>
+    </div>
+
+    <h2>Account Summary</h2>
+
+    <table id="summaryTable">
+        <thead>
+            <tr>
+                <th>Portfolio</th>
+                <th>Daily Value</th>
+                <th>Daily Change</th>
+                <th>Daily Percentage Change</th>
+                <th>YTD Change</th>
+                <th>YTD Percentage Change</th>
+            </tr>
+        </thead>
+        <tbody>
+           
+            <tr>
+                <td>Manual</td>
+                <td id="manualDailyVal"></td>
+                <td id="manualDailyChange"></td>
+                <td id="manualPercChange"></td>
+                <td id="manualYTDChange"></td>
+                <td id="manualYTDPercChange"></td>
+            </tr>
+            <tr>
+                <td>Algorithmic</td>
+                <td id="algorithmicDailyVal"></td>
+                <td id="algorithmicDailyChange"></td>
+                <td id="algorithmicPercChange"></td>
+                <td id="algorithmicYTDChange"></td>
+                <td id="algorithmicYTDPercChange"></td>
+            </tr>
+            <tr>
+                <td>Cash + Strategic</td>
+                <td id="cashStrategicDailyVal"></td>
+                <td id="cashStrategicDailyChange"></td>
+                <td id="cashStrategicPercChange"></td>
+                <td id="cashStrategicYTDChange"></td>
+                <td id="cashStrategicYTDPercChange"></td>
+            </tr>
+            <tr>
+                <td>Total</td>
+                <td id="totalDailyVal"></td>
+                <td id="totalDailyChange"></td>
+                <td id="totalPercChange"></td>
+                <td id="totalYTDChange"></td>
+                <td id="totalYTDPercChange"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Function to set the color based on positive or negative value
+        function setColor(value, elementId) {
+            const element = document.getElementById(elementId);
+            if (value >= 0.01) {
+                element.style.color = 'green'; // Positive values are green
+            } else if (value < -0.01) {
+                element.style.color = 'red'; // Negative values are red
+            }
+        }
+
+        // Function to fetch data from the server and update the table
+        function fetchPortfolioSummary() {
+            fetch('/api/portfolio-summary')
+                .then(response => response.json())
+                .then(data => {
+                   
+
+                    document.getElementById('manualDailyVal').textContent = data.manual.dailyVal[data.manual.dailyVal.length - 1].toFixed(2);
+                    document.getElementById('manualDailyChange').textContent = data.manual.dailyChange[data.manual.dailyChange.length - 1].toFixed(2);
+                    setColor(data.manual.dailyChange[data.manual.dailyChange.length - 1], 'manualDailyChange');
+
+                    document.getElementById('manualPercChange').textContent = data.manual.percChange[data.manual.percChange.length - 1].toFixed(2);
+                    setColor(data.manual.percChange[data.manual.percChange.length - 1], 'manualPercChange');
+
+                    document.getElementById('manualYTDChange').textContent = data.manual.ytdChange.toFixed(2);
+                    setColor(data.manual.ytdChange, 'manualYTDChange');
+
+                    document.getElementById('manualYTDPercChange').textContent = data.manual.ytdPercChange.toFixed(2);
+                    setColor(data.manual.ytdPercChange, 'manualYTDPercChange');
+
+                    document.getElementById('algorithmicDailyVal').textContent = data.algorithmic.dailyVal[data.algorithmic.dailyVal.length - 1].toFixed(2);
+                    document.getElementById('algorithmicDailyChange').textContent = data.algorithmic.dailyChange[data.algorithmic.dailyChange.length - 1].toFixed(2);
+                    setColor(data.algorithmic.dailyChange[data.algorithmic.dailyChange.length - 1], 'algorithmicDailyChange');
+
+                    document.getElementById('algorithmicPercChange').textContent = data.algorithmic.percChange[data.algorithmic.percChange.length - 1].toFixed(2);
+                    setColor(data.algorithmic.percChange[data.algorithmic.percChange.length - 1], 'algorithmicPercChange');
+
+                    document.getElementById('algorithmicYTDChange').textContent = data.algorithmic.ytdChange.toFixed(2);
+                    setColor(data.algorithmic.ytdChange, 'algorithmicYTDChange');
+
+                    document.getElementById('algorithmicYTDPercChange').textContent = data.algorithmic.ytdPercChange.toFixed(2);
+                    setColor(data.algorithmic.ytdPercChange, 'algorithmicYTDPercChange');
+
+                    document.getElementById('cashStrategicDailyVal').textContent = data.cashstrategic.dailyVal[data.total.dailyVal.length - 1].toFixed(2);
+                    document.getElementById('cashStrategicDailyChange').textContent = data.cashstrategic.dailyChange[data.total.dailyChange.length - 1].toFixed(2);
+                    setColor(data.cashstrategic.dailyChange[data.total.dailyChange.length - 1], 'cashStrategicDailyChange');
+
+                    document.getElementById('cashStrategicPercChange').textContent = data.cashstrategic.percChange[data.total.percChange.length - 1].toFixed(2);
+                    setColor(data.cashstrategic.percChange[data.total.percChange.length - 1], 'cashStrategicPercChange');
+
+                    document.getElementById('cashStrategicYTDChange').textContent = data.cashstrategic.ytdChange.toFixed(2);
+                    setColor(data.cashstrategic.ytdChange, 'cashStrategicYTDChange');
+
+                    document.getElementById('cashStrategicYTDPercChange').textContent = data.cashstrategic.ytdPercChange.toFixed(2);
+                    setColor(data.cashstrategic.ytdPercChange, 'cashStrategicYTDPercChange');
+
+                    document.getElementById('totalDailyVal').textContent = data.total.dailyVal[data.total.dailyVal.length - 1].toFixed(2);
+                    document.getElementById('totalDailyChange').textContent = data.total.dailyChange[data.total.dailyChange.length - 1].toFixed(2);
+                    setColor(data.total.dailyChange[data.total.dailyChange.length - 1], 'totalDailyChange');
+
+                    document.getElementById('totalPercChange').textContent = data.total.percChange[data.total.percChange.length - 1].toFixed(2);
+                    setColor(data.total.percChange[data.total.percChange.length - 1], 'totalPercChange');
+
+                    document.getElementById('totalYTDChange').textContent = data.total.ytdChange.toFixed(2);
+                    setColor(data.total.ytdChange, 'totalYTDChange');
+
+                    document.getElementById('totalYTDPercChange').textContent = data.total.ytdPercChange.toFixed(2);
+                    setColor(data.total.ytdPercChange, 'totalYTDPercChange');
+                })
+                .catch(error => console.error('Error fetching portfolio summary:', error));
+        }
+
+        // Load data on page load
+        window.onload = fetchPortfolioSummary;
+    </script>
+
+</body>
+</html>

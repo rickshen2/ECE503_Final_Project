@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Value History</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <canvas id="portfolioChart" width="800" height="400"></canvas>
+
+  <script>
+    // Load CSV data (you can replace this with loading your CSV file from the server)
+    fetch('portfolio_history.csv')
+      .then(response => response.text())
+      .then(csvData => {
+        const data = parseCSV(csvData);
+
+        // Plot the data using Chart.js
+        const ctx = document.getElementById('portfolioChart').getContext('2d');
+        const portfolioChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.dates,
+            datasets: [
+              {
+                label: 'Cash',
+                data: data.cash,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                fill: false,
+              },
+              {
+                label: 'Manual',
+                data: data.manual,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                fill: false,
+              },
+              {
+                label: 'Strategic',
+                data: data.strategic,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                fill: false,
+              },
+              {
+                label: 'Algorithmic',
+                data: data.algorithmic,
+                borderColor: 'rgba(153, 102, 255, 1)',
+                fill: false,
+              },
+              {
+                label: 'Total',
+                data: data.total,
+                borderColor: 'rgba(255, 159, 64, 1)',
+                fill: false,
+              }
+            ]
+          },
+          options: {
+            scales: {
+              x: {
+                type: 'category',
+                labels: data.dates,
+              },
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      });
+
+    // Function to parse CSV data into a structure usable by Chart.js
+    function parseCSV(csvData) {
+      const rows = csvData.split('\n').map(row => row.split(','));
+      const header = rows.shift();  // Remove the header
+      const dates = [];
+      const cash = [];
+      const manual = [];
+      const strategic = [];
+      const algorithmic = [];
+      const total = [];
+
+      rows.forEach(row => {
+        if (row.length === 6) {  // Ensure the row has the correct number of columns
+          dates.push(row[0]);
+          cash.push(parseFloat(row[1]));
+          manual.push(parseFloat(row[2]));
+          strategic.push(parseFloat(row[3]));
+          algorithmic.push(parseFloat(row[4]));
+          total.push(parseFloat(row[5]));
+        }
+      });
+
+      return { dates, cash, manual, strategic, algorithmic, total };
+    }
+  </script>
+
+</body>
+</html>

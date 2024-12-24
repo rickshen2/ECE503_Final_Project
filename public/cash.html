@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.7">
+    <title>SimTrade.AI - Cash Portfolio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic table and chart styling */
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+
+        th {
+          background-color: #f4f4f4;
+        }
+
+        td {
+          background-color: #fafafa;
+        }
+
+        thead {
+          background-color: #f4f4f4;
+        }
+       
+    </style>
+    <style type = "text/css">
+         .chartBox {
+            width: 800px; 
+            height: 600px;
+         }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul style="list-style: none; display: flex; padding: 0; margin: 0;">
+            <li style="margin-right: 15px;">
+                <a href="/index.html" style="text-decoration: none;">Summary</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/cash" style="text-decoration: none; font-weight: bold; color: blue;">Cash</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/manual" style="text-decoration: none;">Manual</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/strategic" style="text-decoration: none;">Strategic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/algorithmic" style="text-decoration: none;">Algorithmic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/research" style="text-decoration: none;">Research</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/trade" style="text-decoration: none;">Trade</a>
+            </li>
+        </ul>
+    </nav>
+
+    <h1>Account Information</h1>
+
+    <div id="header">
+        <p>Username: <span id="username"></span></p>
+        <p>UserID: <span id="userID"></span></p>
+        <p>Current Date: <span id="currentDate"></span></p>
+        <p>Interest Rate: <span id="interestRate"></span></p>
+    </div>
+
+    <h2>Cash Account Summary</h2>
+    <div class = "chartBox">
+        <canvas id="cashPortfolioChart"></canvas>
+    </div>
+    <script>
+        // Function to fetch data from the /api/cash endpoint and render the chart
+        async function fetchAndPlotData() {
+            try {
+                // Fetch the plot data from the server
+                const response = await fetch('/api/cash');
+                const plotData = await response.json();
+
+                // Extract date and dailyVal from the plotData
+                const dates = plotData.cash.date;
+                const dailyVals = plotData.cash.dailyVal;
+
+                // Create the chart
+                const ctx = document.getElementById('cashPortfolioChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,  // X-axis: Dates
+                        datasets: [{
+                            label: 'Cash Portfolio Daily Value',
+                            data: dailyVals,  // Y-axis: Daily Values
+                            borderColor: 'rgba(75, 192, 192, 1)',  // Line color
+                            fill: false,  // No fill under the line
+                            tension: 0.1  // Smooth curve
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'category',
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Daily Value'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching or plotting data:', error);
+            }
+        }
+
+        // Load data and plot the chart when the page loads
+        window.onload = fetchAndPlotData;
+    </script>
+</body>
+</html>

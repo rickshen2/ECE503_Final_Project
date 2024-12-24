@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.7">
+    <title>SimTrade.AI - Manual Portfolio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic table and chart styling */
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+
+        th {
+          background-color: #f4f4f4;
+        }
+
+        td {
+          background-color: #fafafa;
+        }
+
+        thead {
+          background-color: #f4f4f4;
+        }
+    </style>
+    <style type = "text/css">
+        .chartBox {
+           width: 800px; 
+           height: 600px;
+        }
+   </style>
+</head>
+<body>
+    <nav>
+        <ul style="list-style: none; display: flex; padding: 0; margin: 0;">
+            <li style="margin-right: 15px;">
+                <a href="/index.html" style="text-decoration: none;">Summary</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/cash" style="text-decoration: none;">Cash</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/manual" style="text-decoration: none; font-weight: bold; color: blue;">Manual</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/strategic" style="text-decoration: none;">Strategic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/algorithmic" style="text-decoration: none;">Algorithmic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/research" style="text-decoration: none;">Research</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/trade" style="text-decoration: none;">Trade</a>
+            </li>
+        </ul>
+    </nav>
+
+    <h2>Manual Portfolio Positions</h2>
+    <table id="holdingsTable" >
+        <thead>
+            <tr>
+               
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be dynamically inserted here -->
+        </tbody>
+    </table>
+    <h2>Manual Portfolio Performance</h2>
+    <div class = "chartBox">
+        <canvas id="manualPortfolioChart"></canvas>
+    </div>
+    <script>
+        // Fetch and display manual portfolio holdings
+        async function fetchAndDisplayHoldings() {
+        try {
+            const response = await fetch('/api/manual/holdings');
+            const data = await response.json();
+
+            const tableHead = document.getElementById('holdingsTable').querySelector('thead tr');
+            const tableBody = document.getElementById('holdingsTable').querySelector('tbody');
+
+            // tableHead.innerHTML = '<th>Category</th>'; // Reset header
+            tableBody.innerHTML = ''; // Reset body
+
+            // Add the "Ticker" and "Quantity" columns as headings
+            const tickersRow = document.createElement('tr');
+            tickersRow.innerHTML = `<th>Ticker</th>`;
+            const quantitiesRow = document.createElement('tr');
+            quantitiesRow.innerHTML = `<th>Quantity</th>`;
+
+            // Add data to the rows
+            data.holdings.forEach((holding) => {
+                // Append the ticker and quantity to their respective rows
+                tickersRow.innerHTML += `<td>${holding.Ticker}</td>`;
+                quantitiesRow.innerHTML += `<td>${holding.Quantity}</td>`;
+            });
+
+            // Add the rows to the table body
+            tableBody.appendChild(tickersRow);
+            tableBody.appendChild(quantitiesRow);
+        } catch (error) {
+            console.error('Error fetching portfolio holdings:', error);
+        }
+    }
+
+          // Function to fetch data from the /api/manual endpoint and render the chart
+        async function fetchAndPlotData() {
+            try {
+                // Fetch the plot data from the server
+                const response = await fetch('/api/manual');
+                const plotData = await response.json();
+
+                // Extract date and dailyVal from the plotData
+                const dates = plotData.manual.date;
+                const dailyVals = plotData.manual.dailyVal;
+
+                // Create the chart
+                const ctx = document.getElementById('manualPortfolioChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,  // X-axis: Dates
+                        datasets: [{
+                            label: 'Manual Portfolio Daily Value',
+                            data: dailyVals,  // Y-axis: Daily Values
+                            borderColor: 'rgba(75, 192, 192, 1)',  // Line color
+                            fill: false,  // No fill under the line
+                            tension: 0.1  // Smooth curve
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'category',
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Daily Value'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching or plotting data:', error);
+            }
+        }
+
+        // Load data and plot the chart when the page loads
+        window.onload = function () {
+            fetchAndPlotData();     // load chart data
+            fetchAndDisplayHoldings();  // Load holdings data
+        }
+    </script>
+</body>
+</html>

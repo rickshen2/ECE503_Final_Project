@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.7">
+    <title>SimTrade.AI - Research</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic table and chart styling */
+        table {
+          width: 70%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+
+        th, td {
+          padding: 8px;
+          text-align: center;
+          border: 1px solid #ddd;
+        }
+
+        th {
+          background-color: #f4f4f4;
+        }
+
+        td {
+          background-color: #fafafa;
+        }
+
+        thead {
+          background-color: #f4f4f4;
+        }
+    </style>
+    <style type="text/css">
+        .chartBox {
+            width: 800px; 
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul style="list-style: none; display: flex; padding: 0; margin: 0;">
+            <li style="margin-right: 15px;">
+                <a href="/index.html" style="text-decoration: none;">Summary</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/cash" style="text-decoration: none;">Cash</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/manual" style="text-decoration: none;">Manual</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/strategic" style="text-decoration: none;">Strategic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/algorithmic" style="text-decoration: none;">Algorithmic</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/research" style="text-decoration: none; font-weight: bold; color: blue;">Research</a>
+            </li>
+            <li style="margin-right: 15px;">
+                <a href="http://127.0.0.1:3000/trade" style="text-decoration: none;">Trade</a>
+            </li>
+        </ul>
+    </nav>
+
+    <h1>Stock Analysis</h1>
+    <form id="stockForm">
+        <label for="stockSymbol">Stock Symbol:</label>
+        <input type="text" value="AAPL" id="stockSymbol" required>
+        <label for="startDate">Analysis Start Date:</label>
+        <input type="date" value="2023-09-03" id="startDate" required>
+        <label for="endDate">Analysis End Date:</label>
+        <input type="date" value="2024-09-03" id="endDate" required>
+        <label for="currentDate">Today's Date:</label>
+        <input type="date" value="2024-09-03" id="currentDate" required>
+        <button type="submit">Search</button>
+    </form>
+
+    <div id="statisticsContainer">
+        <h3>Statistics during the Analysis Period</h3>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Sharpe Ratio</th>
+                    <th>Minimum</th>
+                    <th>Maximum</th>
+                    <th>Today's Price</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+                <!-- Results will be displayed here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="chartBox">
+        <canvas id="dailyPriceChart"></canvas>
+    </div>
+
+    <script>
+        let chartInstance;
+
+        document.getElementById('stockForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const stockSymbol = document.getElementById('stockSymbol').value.trim();
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const currentDate = document.getElementById('currentDate').value;
+
+        if (!stockSymbol || !startDate || !endDate || !currentDate) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/research', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stockSymbol, startDate, endDate, currentDate })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Server response:', data); // Log the server response
+
+            // Process and display the response
+            if (data) {
+                // Update table with new data
+                const resultBody = document.getElementById('resultBody');
+                resultBody.innerHTML = '';
+                const resultRows = [
+                    [stockSymbol, data.sharpeRatio.toFixed(2) || 'N/A', data.min.toFixed(2) || 'N/A', data.max.toFixed(2) || 'N/A', data.todayPrice || 'N/A']
+                ];
+
+                resultRows.forEach(([symbol, sharpeRatio, min, max, todayPrice]) => {
+                    const row = document.createElement('tr');
+                    const symbolCell = document.createElement('td');
+                    const sharpeCell = document.createElement('td');
+                    const minCell = document.createElement('td');
+                    const maxCell = document.createElement('td');
+                    const priceCell = document.createElement('td');
+                    symbolCell.textContent = symbol;
+                    sharpeCell.textContent = sharpeRatio;
+                    minCell.textContent = min;
+                    maxCell.textContent = max;
+                    priceCell.textContent = todayPrice;
+                    row.appendChild(symbolCell);
+                    row.appendChild(sharpeCell);                
+                    row.appendChild(minCell);
+                    row.appendChild(maxCell);
+                    row.appendChild(priceCell);
+                    resultBody.appendChild(row);
+                });
+
+                // Create the chart with the dailyPrices
+                const dates = data.dailyPrices.map(item => item[0]);
+                const prices = data.dailyPrices.map(item => item[1]);
+
+                // Check if a chart instance already exists, if so destroy it
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('dailyPriceChart').getContext('2d');
+
+                // Create a new chart instance
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates, // X-axis: dates
+                        datasets: [{
+                            label: 'Stock Price',
+                            data: prices, // Y-axis: stock prices
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'category',
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Price'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('resultBody').textContent = 'No data received from the server.';
+            }
+        } catch (error) {
+            console.error('Error fetching research data:', error);
+            document.getElementById('resultBody').textContent = 'Error fetching research data. Please try again.';
+        }
+});
+
+    </script>
+</body>
+</html>
